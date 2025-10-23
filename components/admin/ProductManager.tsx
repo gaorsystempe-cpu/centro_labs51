@@ -5,6 +5,15 @@ import { PlusIcon } from '@heroicons/react/20/solid';
 const ProductManager: React.FC = () => {
     const { products, formatCurrency } = useStore();
 
+    const renderAttributes = (attributes: Record<string, string> | null) => {
+        if (!attributes) return <span className="text-gray-500">N/A</span>;
+        return Object.entries(attributes).map(([key, value]) => (
+            <span key={key} className="inline-block bg-gray-200 rounded-full px-2 py-0.5 text-xs font-semibold text-gray-700 mr-2 mb-1">
+                {key}: {value}
+            </span>
+        ));
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -21,7 +30,8 @@ const ProductManager: React.FC = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variante (Atributos)</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -29,25 +39,50 @@ const ProductManager: React.FC = () => {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {products.map(product => (
-                                <tr key={product.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <div className="flex-shrink-0 h-10 w-10">
-                                                <img className="h-10 w-10 rounded-md object-cover" src={product.imageUrl} alt={product.name} />
+                                product.product_variants.length > 0 ? product.product_variants.map((variant, index) => (
+                                    <tr key={variant.id}>
+                                        {/* El nombre del producto solo se muestra en la primera fila de sus variantes */}
+                                        {index === 0 && (
+                                            <td className="px-6 py-4 whitespace-nowrap" rowSpan={product.product_variants.length}>
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-10 w-10">
+                                                        <img className="h-10 w-10 rounded-md object-cover" src={variant.image_url || (product.image_urls && product.image_urls[0]) || 'https://via.placeholder.com/150'} alt={product.name} />
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                                        <div className="text-xs text-gray-500">{(product.categories as any)?.name || 'Sin categoría'}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        )}
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{renderAttributes(variant.attributes)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{variant.sku || '-'}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(variant.price_override ?? product.selling_price)}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{variant.stock}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="#" className="text-indigo-600 hover:text-indigo-900 mr-4">Editar</a>
+                                            <a href="#" className="text-red-600 hover:text-red-900">Eliminar</a>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr key={product.id}>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                             <div className="flex items-center">
+                                                <div className="flex-shrink-0 h-10 w-10">
+                                                    <img className="h-10 w-10 rounded-md object-cover" src={(product.image_urls && product.image_urls[0]) || 'https://via.placeholder.com/150'} alt={product.name} />
+                                                </div>
+                                                <div className="ml-4">
+                                                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                                     <div className="text-xs text-gray-500">{(product.categories as any)?.name || 'Sin categoría'}</div>
+                                                </div>
                                             </div>
-                                            <div className="ml-4">
-                                                <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.category}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(product.price)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="#" className="text-indigo-600 hover:text-indigo-900 mr-4">Editar</a>
-                                        <a href="#" className="text-red-600 hover:text-red-900">Eliminar</a>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" colSpan={3}>Este producto no tiene variantes definidas.</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <a href="#" className="text-indigo-600 hover:text-indigo-900 mr-4">Gestionar</a>
+                                        </td>
+                                    </tr>
+                                )
                             ))}
                         </tbody>
                     </table>

@@ -1,11 +1,12 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import type { Store, Theme, Product, Order, TemplateName } from '../types';
-import { getStoreById, getProductsByStoreId, getOrdersByStoreId } from '../services/api';
+import type { Store, Theme, ProductWithVariants, Order, TemplateName, Category } from '../types';
+import { getStoreById, getProductsWithVariantsByStoreId, getOrdersByStoreId, getCategoriesByStoreId } from '../services/api';
 
 interface StoreContextType {
   store: Store | null;
-  products: Product[];
+  products: ProductWithVariants[];
+  categories: Category[];
   orders: Order[];
   loading: boolean;
   updateTheme: (newTheme: Partial<Theme>) => void;
@@ -20,7 +21,8 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { storeId } = useParams<{ storeId: string }>();
   const [store, setStore] = useState<Store | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithVariants[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,14 +31,16 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       if (!storeId) return;
       setLoading(true);
       try {
-        const [storeData, productsData, ordersData] = await Promise.all([
+        const [storeData, productsData, ordersData, categoriesData] = await Promise.all([
           getStoreById(storeId),
-          getProductsByStoreId(storeId),
-          getOrdersByStoreId(storeId)
+          getProductsWithVariantsByStoreId(storeId),
+          getOrdersByStoreId(storeId),
+          getCategoriesByStoreId(storeId)
         ]);
         setStore(storeData || null);
         setProducts(productsData);
         setOrders(ordersData);
+        setCategories(categoriesData);
       } catch (error) {
         console.error("Failed to fetch store data:", error);
         setStore(null);
@@ -79,7 +83,6 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         currency: store.currency,
         minimumFractionDigits: 2
     };
-    // Adjust for Peruvian Soles symbol
     if (store.currency === 'PEN') {
         return `S/ ${amount.toFixed(2)}`;
     }
@@ -88,7 +91,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
 
   return (
-    <StoreContext.Provider value={{ store, products, orders, loading, updateTheme, updateTemplate, updateStoreName, updateCurrency, formatCurrency }}>
+    <StoreContext.Provider value={{ store, products, categories, orders, loading, updateTheme, updateTemplate, updateStoreName, updateCurrency, formatCurrency }}>
       {children}
     </StoreContext.Provider>
   );

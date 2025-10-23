@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import type { Store, Product, Order, User } from '../types';
+import type { Store, ProductWithVariants, Order, User, Category } from '../types';
 
 // --- Store Functions ---
 
@@ -120,14 +120,29 @@ export const deleteStore = async (storeId: string): Promise<boolean> => {
   return true;
 };
 
-// --- Product & Order Functions ---
+// --- Product, Variant & Category Functions ---
 
-export const getProductsByStoreId = async (storeId: string): Promise<Product[]> => {
+export const getProductsWithVariantsByStoreId = async (storeId: string): Promise<ProductWithVariants[]> => {
   if (!isSupabaseConfigured) return [];
-  const { data, error } = await supabase.from('products').select('*').eq('store_id', storeId);
+  const { data, error } = await supabase
+    .from('products')
+    .select('*, product_variants(*), categories(name)')
+    .eq('store_id', storeId)
+    .eq('is_active', true);
+    
+  if (error) throw new Error(error.message);
+  return (data as any) || [];
+};
+
+export const getCategoriesByStoreId = async (storeId: string): Promise<Category[]> => {
+  if (!isSupabaseConfigured) return [];
+  const { data, error } = await supabase.from('categories').select('*').eq('store_id', storeId);
   if (error) throw new Error(error.message);
   return data || [];
 };
+
+
+// --- Order Functions ---
 
 export const getOrdersByStoreId = async (storeId: string): Promise<Order[]> => {
   if (!isSupabaseConfigured) return [];
@@ -148,7 +163,6 @@ export const authenticateUser = async (email: string, password: string): Promise
         return undefined;
     }
 
-    // FIX: Query using 'id' which is the PK and FK to auth.users.id
     const { data: profileData, error: profileError } = await supabase
         .from('users')
         .select('*, store_id')
@@ -161,7 +175,6 @@ export const authenticateUser = async (email: string, password: string): Promise
         return undefined;
     }
 
-    // Adapt snake_case from DB to camelCase for the app
     return {
       id: profileData.id,
       name: profileData.name,
@@ -174,7 +187,6 @@ export const authenticateUser = async (email: string, password: string): Promise
 export const sendAdminPasswordReset = async (email: string): Promise<void> => {
   if (!isSupabaseConfigured) throw new Error("Supabase is not configured.");
   
-  // The user will be redirected to the main page of the app after resetting the password.
   const redirectTo = window.location.origin;
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });

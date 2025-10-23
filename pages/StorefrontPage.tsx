@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { getStoreById, getProductsByStoreId } from '../services/api';
-import type { Store, Product } from '../types';
+import { getStoreById, getProductsWithVariantsByStoreId } from '../services/api';
+import type { Store, ProductWithVariants } from '../types';
 import { TemplateName } from '../types';
 
 import MinimalModernTemplate from '../templates/MinimalModernTemplate';
@@ -12,7 +12,7 @@ import TechStoreTemplate from '../templates/TechStoreTemplate';
 const StorefrontPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const [store, setStore] = useState<Store | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductWithVariants[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,7 +31,7 @@ const StorefrontPage: React.FC = () => {
           setStore(null);
         } else {
           setStore(storeData);
-          const productsData = await getProductsByStoreId(storeId);
+          const productsData = await getProductsWithVariantsByStoreId(storeId);
           setProducts(productsData);
         }
       } catch (e) {

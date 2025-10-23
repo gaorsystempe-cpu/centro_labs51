@@ -9,8 +9,8 @@ interface CheckoutModalProps {
     cartTotal: number;
     store: Store;
     formatCurrency: (amount: number) => string;
-    updateQuantity: (productId: string, newQuantity: number) => void;
-    removeFromCart: (productId: string) => void;
+    updateQuantity: (variantId: string, newQuantity: number) => void;
+    removeFromCart: (variantId: string) => void;
     clearCart: () => void;
 }
 
@@ -19,10 +19,20 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 }) => {
     if (!isOpen) return null;
 
+    const renderAttributes = (attributes: Record<string, string> | null) => {
+        if (!attributes || Object.keys(attributes).length === 0) return null;
+        return (
+            <div className="text-xs text-gray-500">
+                {Object.entries(attributes).map(([key, value]) => `${key}: ${value}`).join(', ')}
+            </div>
+        );
+    };
+
     const generateWhatsAppMessage = () => {
         let message = `¡Hola ${store.name}! ✨\n\nQuisiera confirmar mi pedido:\n\n`;
         cartItems.forEach(item => {
-            message += `*${item.name}* (x${item.quantity}) - ${formatCurrency(item.price * item.quantity)}\n`;
+            const attributeText = item.attributes ? ` (${Object.values(item.attributes).join(', ')})` : '';
+            message += `*${item.name}${attributeText}* (x${item.quantity}) - ${formatCurrency(item.price * item.quantity)}\n`;
         });
         message += `\n*Total a Pagar:* ${formatCurrency(cartTotal)}\n\n`;
         message += "En breve realizaré el pago. ¡Gracias! 😊";
@@ -48,9 +58,10 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                             <div className="space-y-4">
                                 {cartItems.map(item => (
                                     <div key={item.id} className="flex items-center space-x-4">
-                                        <img src={item.imageUrl} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
+                                        <img src={item.imageUrl || 'https://via.placeholder.com/150'} alt={item.name} className="w-16 h-16 rounded-md object-cover" />
                                         <div className="flex-grow">
                                             <p className="font-semibold text-gray-800">{item.name}</p>
+                                            {renderAttributes(item.attributes)}
                                             <p className="text-sm text-gray-500">{formatCurrency(item.price)}</p>
                                         </div>
                                         <div className="flex items-center space-x-2">
@@ -107,7 +118,8 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
                             className="w-full block text-center py-3 px-4 rounded-lg font-bold text-white transition-transform transform hover:scale-105"
                             style={{ backgroundColor: '#25D366' }}
                             onClick={() => {
-                                clearCart();
+                                // Consider not clearing cart immediately, in case user wants to review
+                                // clearCart(); 
                                 onClose();
                             }}
                         >
