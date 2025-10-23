@@ -50,7 +50,7 @@ const ProductManager: React.FC = () => {
                                                     </div>
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                                                        <div className="text-xs text-gray-500">{(product.categories as any)?.name || 'Sin categoría'}</div>
+                                                        <div className="text-xs text-gray-500">{product.categories?.name || 'Sin categoría'}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -73,11 +73,11 @@ const ProductManager: React.FC = () => {
                                                 </div>
                                                 <div className="ml-4">
                                                     <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                                                     <div className="text-xs text-gray-500">{(product.categories as any)?.name || 'Sin categoría'}</div>
+                                                     <div className="text-xs text-gray-500">{product.categories?.name || 'Sin categoría'}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" colSpan={3}>Este producto no tiene variantes definidas.</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 italic" colSpan={4}>Este producto no tiene variantes definidas.</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="#" className="text-indigo-600 hover:text-indigo-900 mr-4">Gestionar</a>
                                         </td>

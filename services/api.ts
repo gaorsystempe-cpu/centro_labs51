@@ -126,7 +126,7 @@ export const getProductsWithVariantsByStoreId = async (storeId: string): Promise
   if (!isSupabaseConfigured) return [];
   const { data, error } = await supabase
     .from('products')
-    .select('*, product_variants(*), categories(name)')
+    .select('*, product_variants(*), categories(*)')
     .eq('store_id', storeId)
     .eq('is_active', true);
     
@@ -148,7 +148,14 @@ export const getOrdersByStoreId = async (storeId: string): Promise<Order[]> => {
   if (!isSupabaseConfigured) return [];
   const { data, error } = await supabase.from('orders').select('*').eq('store_id', storeId);
   if (error) throw new Error(error.message);
-  return data || [];
+  return data?.map(o => ({
+    id: o.id,
+    store_id: o.store_id,
+    customerName: o.customer_name,
+    date: o.date,
+    total: o.total,
+    status: o.status,
+  })) || [];
 };
 
 // --- Authentication Functions ---
