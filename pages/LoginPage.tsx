@@ -1,9 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { authenticateUser } from '../services/api';
+import { authenticateUser, sendAdminPasswordReset } from '../services/api';
 import Logo from '../components/Logo';
 import { isSupabaseConfigured } from '../services/supabaseClient';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+
+const ResetPasswordModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    const [email, setEmail] = useState('');
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleResetRequest = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        setMessage('');
+        try {
+            await sendAdminPasswordReset(email);
+            setMessage('Si existe una cuenta con este email, se ha enviado un enlace para restablecer la contraseña.');
+        } catch (err) {
+            setError((err as Error).message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md relative">
+                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <XMarkIcon className="h-6 w-6" />
+                </button>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Restablecer Contraseña</h2>
+                <p className="text-gray-600 mb-6">Ingresa tu email y te enviaremos un enlace para que puedas volver a acceder a tu cuenta.</p>
+                <form onSubmit={handleResetRequest}>
+                    <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700">Email</label>
+                    <input
+                        id="reset-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="tu-usuario@labs51.pe"
+                        required
+                        className="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm py-3 px-4 text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                    {message && <p className="text-sm text-green-600 mt-4">{message}</p>}
+                    {error && <p className="text-sm text-red-500 mt-4">{error}</p>}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full mt-6 py-3 px-4 border border-transparent rounded-lg shadow-lg text-md font-medium text-white bg-purple-600 hover:bg-purple-700 transition disabled:opacity-50"
+                    >
+                        {loading ? 'Enviando...' : 'Enviar Enlace'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 
 const LoginPage: React.FC = () => {
     const { user, login } = useAuth();
@@ -12,6 +69,7 @@ const LoginPage: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -50,6 +108,7 @@ const LoginPage: React.FC = () => {
     };
 
     return (
+        <>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 relative">
              {!isSupabaseConfigured && (
                 <div className="absolute top-0 left-0 right-0 p-3 bg-yellow-400 border-b border-yellow-500 text-yellow-900 text-center text-sm z-10">
@@ -89,9 +148,9 @@ const LoginPage: React.FC = () => {
                         </div>
                         
                         <div className="text-right">
-                             <a href="#" className="text-sm font-medium text-purple-600 hover:text-purple-700">
+                             <button type="button" onClick={() => setShowResetModal(true)} className="text-sm font-medium text-purple-600 hover:text-purple-700">
                                 ¿Olvidaste tu contraseña?
-                            </a>
+                            </button>
                         </div>
                         
                         {error && <p className="text-sm text-red-500 text-center">{error}</p>}
@@ -128,6 +187,8 @@ const LoginPage: React.FC = () => {
                 </div>
             </div>
         </div>
+        {showResetModal && <ResetPasswordModal onClose={() => setShowResetModal(false)} />}
+        </>
     );
 };
 
