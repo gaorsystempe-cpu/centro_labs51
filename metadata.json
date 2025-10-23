@@ -1,0 +1,5 @@
+{
+  "name": "Copy of LABS51 Platform",
+  "description": "Una plataforma SaaS multi-tenant para que los emprendedores creen y gestionen sus propias tiendas online independientes. Cuenta con un panel de administrador ROOT para la gestión de la plataforma y un panel de ADMIN para los propietarios de las tiendas, junto con un sistema de plantillas dinámicas.",
+  "requestFramePermissions": []
+}
