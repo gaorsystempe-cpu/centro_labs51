@@ -17,11 +17,8 @@ const TemplateHeader: React.FC<{ store: Store }> = ({ store }) => {
             {store.logoUrl && <img src={store.logoUrl} alt={`${store.name} logo`} className="h-10 w-auto mr-4 object-contain" />}
             <h1 className="text-3xl font-bold" style={{ color: store.theme.primaryColor }}>{store.name}</h1>
         </div>
-        <nav className="hidden md:flex space-x-8">
-            <a href="#" className="hover:underline">Inicio</a>
-            <a href="#" className="hover:underline">Tienda</a>
-            <a href="#" className="hover:underline">Nosotros</a>
-            <a href="#" className="hover:underline">Contacto</a>
+        <nav className="hidden md:flex">
+            <a href="#" className="text-lg font-semibold" style={{ color: store.theme.primaryColor }}>Tienda</a>
         </nav>
       </div>
     </header>
