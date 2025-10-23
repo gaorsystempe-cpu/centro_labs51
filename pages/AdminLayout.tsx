@@ -56,11 +56,23 @@ const AdminHeader: React.FC = () => {
 }
 
 const AdminLayoutContent: React.FC = () => {
-    const { loading, store } = useStore();
+    const { loading, store, error } = useStore();
     const { storeId } = useParams<{ storeId: string }>();
 
     if (loading) {
         return <div className="flex-1 flex items-center justify-center">Cargando datos de la tienda...</div>;
+    }
+
+    if (error) {
+        return (
+            <div className="flex-1 flex items-center justify-center p-8">
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-lg text-center" role="alert">
+                    <strong className="font-bold">¡Error de Conexión!</strong>
+                    <span className="block sm:inline ml-2">{error}</span>
+                    <p className="mt-2 text-sm">Por favor, ejecute el script SQL completo en su editor de Supabase para crear todas las tablas necesarias.</p>
+                </div>
+            </div>
+        );
     }
 
     if (!store) {

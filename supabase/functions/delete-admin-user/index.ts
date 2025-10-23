@@ -1,5 +1,5 @@
-// Fix: Add Deno types reference to resolve "Cannot find name 'Deno'" error.
-/// <reference types="https://deno.land/x/deno/cli/types.d.ts" />
+// FIX: The Deno types reference was outdated and invalid. Replaced with the correct reference for Supabase Edge Functions to make Deno globals available.
+/// <reference types="npm:@supabase/functions-js/src/edge-runtime.d.ts" />
 
 // @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';

@@ -9,6 +9,7 @@ interface StoreContextType {
   categories: Category[];
   orders: Order[];
   loading: boolean;
+  error: string | null;
   updateTheme: (newTheme: Partial<Theme>) => void;
   updateTemplate: (newTemplate: TemplateName) => void;
   updateStoreName: (newName: string) => void;
@@ -25,11 +26,13 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [categories, setCategories] = useState<Category[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!storeId) return;
       setLoading(true);
+      setError(null);
       try {
         const [storeData, productsData, ordersData, categoriesData] = await Promise.all([
           getStoreById(storeId),
@@ -41,8 +44,10 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setProducts(productsData);
         setOrders(ordersData);
         setCategories(categoriesData);
-      } catch (error) {
-        console.error("Failed to fetch store data:", error);
+      } catch (err) {
+        console.error("Failed to fetch store data:", err);
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+        setError(`Error al cargar los datos de la tienda: ${errorMessage}. Asegúrese de que la base de datos esté configurada correctamente con todas las tablas requeridas (como 'orders').`);
         setStore(null);
       } finally {
         setLoading(false);
@@ -91,7 +96,7 @@ export const StoreProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
 
   return (
-    <StoreContext.Provider value={{ store, products, categories, orders, loading, updateTheme, updateTemplate, updateStoreName, updateCurrency, formatCurrency }}>
+    <StoreContext.Provider value={{ store, products, categories, orders, loading, error, updateTheme, updateTemplate, updateStoreName, updateCurrency, formatCurrency }}>
       {children}
     </StoreContext.Provider>
   );
