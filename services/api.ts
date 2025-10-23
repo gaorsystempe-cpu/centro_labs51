@@ -78,8 +78,8 @@ export const createStoreAndAdmin = async (
     const { data: newStore, error: storeError } = await supabase.from('stores').insert(storePayload).select().single();
 
     if (storeError || !newStore) {
-        // TODO: In a real app, you might want to delete the created auth user for cleanup.
-        // For now, we'll throw an error.
+        // In a real app, you might want to delete the created auth user for cleanup.
+        await supabase.auth.admin.deleteUser(adminUserId);
         throw new Error(`Error creating store: ${storeError?.message}`);
     }
 
@@ -95,7 +95,9 @@ export const createStoreAndAdmin = async (
     const { error: profileError } = await supabase.from('users').insert(userProfile);
 
     if (profileError) {
-        // TODO: Cleanup might be needed here as well.
+        // Cleanup is needed here as well.
+        await supabase.auth.admin.deleteUser(adminUserId);
+        await supabase.from('stores').delete().eq('id', newStore.id);
         throw new Error(`Error creating user profile: ${profileError.message}`);
     }
     
@@ -112,9 +114,14 @@ export const updateStore = async (storeId: string, updates: Partial<Store>): Pro
 
 export const deleteStore = async (storeId: string): Promise<boolean> => {
   if (!isSupabaseConfigured) return false;
-  const { error } = await supabase.from('stores').delete().eq('id', storeId);
+  
+  // Invoke the edge function to handle the deletion securely.
+  const { error } = await supabase.functions.invoke('delete-admin-user', {
+    body: { storeId },
+  });
+
   if (error) {
-      console.error('Error deleting store:', error);
+      console.error('Error deleting store via function:', error);
       return false;
   }
   return true;
