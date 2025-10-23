@@ -1,35 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authenticateUser } from '../services/api';
 import Logo from '../components/Logo';
+import { isSupabaseConfigured } from '../services/supabaseClient';
 
 const LoginPage: React.FC = () => {
-    const { login } = useAuth();
+    const { user, login } = useAuth();
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        if (user) {
+            if (user.role === 'ROOT') {
+                navigate('/root', { replace: true });
+            } else if (user.role === 'ADMIN' && user.storeId) {
+                navigate(`/admin/${user.storeId}`, { replace: true });
+            }
+        }
+    }, [user, navigate]);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        try {
-            const user = await authenticateUser(email, password);
+        if (!isSupabaseConfigured) {
+             setError('La aplicación no está configurada para conectar con un backend. Verifique la consola para más detalles.');
+             setLoading(false);
+             return;
+        }
 
-            if (user) {
-                login(user);
-                if (user.role === 'ROOT') {
-                    navigate('/root');
-                } else if (user.role === 'ADMIN' && user.storeId) {
-                    navigate(`/admin/${user.storeId}`);
-                } else {
-                    setError('La cuenta de administrador no está asociada a ninguna tienda.');
-                    setLoading(false);
-                }
+        try {
+            const authenticatedUser = await authenticateUser(email, password);
+
+            if (authenticatedUser) {
+                login(authenticatedUser); // Context will handle navigation via useEffect
             } else {
                 setError('Credenciales inválidas. Por favor, intente de nuevo.');
                 setLoading(false);
@@ -41,7 +50,12 @@ const LoginPage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 relative">
+             {!isSupabaseConfigured && (
+                <div className="absolute top-0 left-0 right-0 p-3 bg-yellow-400 border-b border-yellow-500 text-yellow-900 text-center text-sm z-10">
+                    <strong>Advertencia de Configuración:</strong> La aplicación está usando credenciales de Supabase de ejemplo. La conexión al backend no funcionará.
+                </div>
+            )}
             <div className="flex w-full max-w-5xl h-[650px] rounded-2xl shadow-2xl overflow-hidden bg-white">
                 {/* Left Panel: Login Form */}
                 <div className="w-full lg:w-1/2 p-8 sm:p-12 flex flex-col justify-center">

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { Store } from '../../types';
 import { TemplateName } from '../../types';
-import { createStore, updateStore } from '../../services/api';
+import { createStoreAndAdmin, updateStore } from '../../services/api';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import PasswordField from './PasswordField';
 
 interface StoreFormModalProps {
     isOpen: boolean;
@@ -24,6 +25,9 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
             yape: { holder: '', number: '' },
             plin: { holder: '', number: '' },
         },
+        // New fields for admin creation
+        adminEmail: '',
+        adminPassword: ''
     });
     const [loading, setLoading] = useState(false);
 
@@ -38,6 +42,8 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
                 currency: storeToEdit.currency,
                 whatsappNumber: storeToEdit.whatsappNumber,
                 paymentInfo: { ...storeToEdit.paymentInfo },
+                adminEmail: '', // Not needed for editing
+                adminPassword: '', // Not needed for editing
             });
         } else {
             // Reset to default for new store
@@ -50,6 +56,8 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
                 currency: 'PEN',
                 whatsappNumber: '',
                 paymentInfo: { yape: { holder: '', number: '' }, plin: { holder: '', number: '' } },
+                adminEmail: '',
+                adminPassword: '',
             });
         }
     }, [storeToEdit, isOpen]);
@@ -78,15 +86,17 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
         setLoading(true);
         try {
             if (storeToEdit) {
-                await updateStore(storeToEdit.id, formData);
+                 const { adminEmail, adminPassword, ...storeUpdates } = formData;
+                await updateStore(storeToEdit.id, storeUpdates);
             } else {
-                await createStore(formData);
+                const { adminEmail, adminPassword, ...storeData } = formData;
+                await createStoreAndAdmin(storeData, adminEmail, adminPassword);
             }
             onSave();
             onClose();
         } catch (error) {
             console.error("Failed to save store", error);
-            alert("Error al guardar la tienda.");
+            alert(`Error al guardar la tienda: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setLoading(false);
         }
@@ -96,7 +106,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" onClick={onClose}>
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center p-5 border-b">
                     <h2 className="text-2xl font-bold text-gray-800">
                         {storeToEdit ? 'Editar Tienda' : 'Crear Nueva Tienda'}
@@ -106,7 +116,7 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
+                <form id="store-form" onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Nombre de la Tienda</label>
@@ -116,6 +126,25 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
                             <label className="block text-sm font-medium text-gray-700">Nombre del Propietario</label>
                             <input type="text" name="owner" value={formData.owner} onChange={handleChange} className="mt-1 input-class" required />
                         </div>
+                    </div>
+
+                    {!storeToEdit && (
+                        <div className="border-t pt-6">
+                             <h3 className="text-lg font-medium text-gray-800 mb-4">Credenciales del Administrador</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Email del Admin</label>
+                                    <input type="email" name="adminEmail" value={formData.adminEmail} onChange={handleChange} className="mt-1 input-class" required />
+                                </div>
+                                 <div>
+                                    <label className="block text-sm font-medium text-gray-700">Contraseña del Admin</label>
+                                    <PasswordField value={formData.adminPassword} onChange={(val) => setFormData(p => ({...p, adminPassword: val}))} required />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="border-t pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div>
                             <label className="block text-sm font-medium text-gray-700">Estado</label>
                             <select name="status" value={formData.status} onChange={handleChange} className="mt-1 input-class">
@@ -143,8 +172,8 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
                                 <option value="USD">Dólares ($)</option>
                             </select>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Número de WhatsApp</label>
+                         <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700">Número de WhatsApp (con código de país)</label>
                             <input type="text" name="whatsappNumber" value={formData.whatsappNumber} onChange={handleChange} className="mt-1 input-class" placeholder="51987654321" required />
                         </div>
                     </div>
@@ -186,7 +215,6 @@ const StoreFormModal: React.FC<StoreFormModalProps> = ({ isOpen, onClose, onSave
                     <button
                         type="submit"
                         form="store-form"
-                        onClick={handleSubmit}
                         disabled={loading}
                         className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
                     >

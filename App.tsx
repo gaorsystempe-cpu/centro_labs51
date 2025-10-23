@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
@@ -12,9 +11,14 @@ import OrderManager from './components/admin/OrderManager';
 import Customizer from './components/admin/Customizer';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles: string[] }> = ({ children, allowedRoles }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen">Cargando...</div>;
+  }
+
   if (!user || !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
   return <>{children}</>;
 };
