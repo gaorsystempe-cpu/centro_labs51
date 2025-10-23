@@ -1,19 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '../types';
 
-// IMPORTANT: Replace with your Supabase project URL and anon key
-// In a real project, these would be in environment variables
-const placeholderUrl = 'https://your-project-id.supabase.co';
-const placeholderKey = 'YOUR_SUPABASE_ANON_KEY';
+// Las credenciales de Supabase del usuario se han insertado aquí.
+const supabaseUrl = process.env.SUPABASE_URL || 'https://pifdckopbvgxgavwftwk.supabase.co';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpZmRja29wYnZneGdhdndmdHdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjExOTMxMTQsImV4cCI6MjA3Njc2OTExNH0.Pbzd66MN1a1FXnOAKvTJZHhdAg4gTbFAX5RlCw5QM1E';
 
-const supabaseUrl = process.env.SUPABASE_URL || placeholderUrl;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || placeholderKey;
-
-export const isSupabaseConfigured = supabaseUrl !== placeholderUrl && supabaseAnonKey !== placeholderKey;
-
-if (!isSupabaseConfigured) {
-    console.warn("Supabase is not configured. Please replace the placeholder values in services/supabaseClient.ts or set environment variables. The application will not work correctly.");
-}
+// La aplicación ahora se considera configurada.
+export const isSupabaseConfigured = true;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
