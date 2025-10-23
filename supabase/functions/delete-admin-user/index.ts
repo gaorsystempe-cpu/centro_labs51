@@ -1,5 +1,5 @@
-// FIX: The Deno types reference was outdated and invalid. Replaced with the correct reference for Supabase Edge Functions to make Deno globals available.
-/// <reference types="npm:@supabase/functions-js/src/edge-runtime.d.ts" />
+// FIX: Updated the Deno types reference to a specific versioned URL to resolve 'Cannot find name Deno' errors.
+/// <reference types="https://esm.sh/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
 
 // @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
