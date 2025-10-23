@@ -41,7 +41,7 @@ export const getStoreById = async (id: string): Promise<Store | undefined> => {
   return data || undefined;
 };
 
-// This new function handles creating the auth user, the store, and the user profile linking them.
+// This function now securely invokes an edge function to create the store and admin user.
 export const createStoreAndAdmin = async (
     storeData: Omit<Store, 'id' | 'createdAt' | 'theme' | 'adminEmail'>, 
     adminEmail: string, 
@@ -49,59 +49,18 @@ export const createStoreAndAdmin = async (
 ): Promise<Store> => {
     if (!isSupabaseConfigured) throw new Error("Supabase is not configured.");
 
-    // 1. Create the Auth User
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: adminEmail,
-        password: adminPassword,
+    // Invoke the edge function to handle creation securely
+    const { data, error } = await supabase.functions.invoke('create-store-and-admin', {
+        body: { storeData, adminEmail, adminPassword },
     });
 
-    if (authError || !authData.user) {
-        throw new Error(`Error creating admin user: ${authError?.message}`);
-    }
-    const adminUserId = authData.user.id;
-
-    // 2. Create the Store
-    // Define a default theme for new stores
-    const defaultTheme = {
-      primaryColor: '#6366F1',
-      secondaryColor: '#6B7280',
-      backgroundColor: '#FFFFFF',
-      textColor: '#1F2937',
-      font: 'Inter, sans-serif'
-    };
-    
-    const storePayload = {
-      ...storeData,
-      theme: defaultTheme, // Add default theme
-    };
-    
-    const { data: newStore, error: storeError } = await supabase.from('stores').insert(storePayload).select().single();
-
-    if (storeError || !newStore) {
-        // In a real app, you might want to delete the created auth user for cleanup.
-        await supabase.auth.admin.deleteUser(adminUserId);
-        throw new Error(`Error creating store: ${storeError?.message}`);
+    if (error) {
+        // The edge function might return a structured error from its response body
+        const errorMessage = data?.error || error.message;
+        throw new Error(`${errorMessage}`);
     }
 
-    // 3. Create the User Profile and link it to the store
-    const userProfile = {
-        id: adminUserId,
-        name: storeData.owner, // Use owner name for the user profile
-        email: adminEmail,
-        role: 'ADMIN',
-        store_id: newStore.id,
-    };
-
-    const { error: profileError } = await supabase.from('users').insert(userProfile);
-
-    if (profileError) {
-        // Cleanup is needed here as well.
-        await supabase.auth.admin.deleteUser(adminUserId);
-        await supabase.from('stores').delete().eq('id', newStore.id);
-        throw new Error(`Error creating user profile: ${profileError.message}`);
-    }
-    
-    return newStore;
+    return data;
 };
 
 
