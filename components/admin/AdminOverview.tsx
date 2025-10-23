@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../../contexts/StoreContext';
-import { ShoppingBagIcon, BanknotesIcon, ShoppingCartIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { ShoppingBagIcon, BanknotesIcon, ShoppingCartIcon, UsersIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: React.ReactNode }> = ({ title, value, icon }) => (
     <div className="bg-white p-6 rounded-lg shadow-md flex items-center space-x-4">
@@ -60,7 +60,7 @@ const AdminOverview: React.FC = () => {
                                 <tr key={order.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.customerName}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.date}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.date).toLocaleDateString()}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatCurrency(order.total)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -76,8 +76,10 @@ const AdminOverview: React.FC = () => {
                     </table>
                 </div>
             ) : (
-                <div className="text-center py-8 text-gray-500">
-                    <p>Aún no hay pedidos recientes.</p>
+                <div className="text-center py-12 text-gray-500 border-2 border-dashed rounded-lg">
+                    <ClipboardDocumentIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No hay pedidos recientes</h3>
+                    <p className="mt-1 text-sm text-gray-500">Los últimos 5 pedidos aparecerán aquí.</p>
                 </div>
             )}
         </div>
