@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getStores } from '../services/api';
+import { getStores, deleteStore } from '../services/api';
 import type { Store } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import StoreFormModal from '../components/root/StoreFormModal';
+import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 const Header: React.FC = () => {
     const { user, logout } = useAuth();
@@ -28,11 +30,11 @@ const Header: React.FC = () => {
     );
 }
 
-const StoreCard: React.FC<{ store: Store }> = ({ store }) => {
+const StoreCard: React.FC<{ store: Store; onEdit: () => void; onDelete: () => void; }> = ({ store, onEdit, onDelete }) => {
     const statusClasses = store.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
     
     return (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
+        <div className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col justify-between transform hover:-translate-y-1 transition-transform duration-300">
             <div className="p-6">
                 <div className="flex justify-between items-start">
                     <div>
@@ -50,11 +52,13 @@ const StoreCard: React.FC<{ store: Store }> = ({ store }) => {
                 </div>
             </div>
             <div className="bg-gray-50 px-6 py-3 flex justify-end space-x-2">
+                 <button onClick={onEdit} className="p-2 text-gray-500 hover:text-indigo-600"><PencilIcon className="h-5 w-5"/></button>
+                 <button onClick={onDelete} className="p-2 text-gray-500 hover:text-red-600"><TrashIcon className="h-5 w-5"/></button>
                  <Link to={`/store/${store.id}`} target="_blank" className="px-3 py-1 text-sm font-medium text-indigo-600 bg-indigo-100 rounded-md hover:bg-indigo-200">
-                    Ver Tienda
+                    Ver
                 </Link>
                 <Link to={`/admin/${store.id}`} className="px-3 py-1 text-sm font-medium text-white bg-gray-800 rounded-md hover:bg-gray-900">
-                    Administrar
+                    Admin
                 </Link>
             </div>
         </div>
@@ -64,18 +68,48 @@ const StoreCard: React.FC<{ store: Store }> = ({ store }) => {
 const RootDashboardPage: React.FC = () => {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingStore, setEditingStore] = useState<Store | null>(null);
 
-  useEffect(() => {
-    const fetchStores = async () => {
-      setLoading(true);
+  const fetchStores = useCallback(async () => {
+    setLoading(true);
+    try {
       const storesData = await getStores();
       setStores(storesData);
-      setLoading(false);
-    };
-    fetchStores();
+    } catch (error) {
+      console.error("Failed to fetch stores", error);
+    } finally {
+        setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchStores();
+  }, [fetchStores]);
+
+  const handleOpenCreateModal = () => {
+    setEditingStore(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (store: Store) => {
+    setEditingStore(store);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingStore(null);
+  };
+
+  const handleDeleteStore = async (storeId: string) => {
+    if(window.confirm("¿Estás seguro de que quieres eliminar esta tienda? Esta acción no se puede deshacer.")) {
+        await deleteStore(storeId);
+        await fetchStores();
+    }
+  }
   
-  if (loading) {
+  if (loading && stores.length === 0) {
       return <div className="flex justify-center items-center h-screen">Cargando...</div>;
   }
 
@@ -101,13 +135,37 @@ const RootDashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Todas las Tiendas</h2>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Todas las Tiendas</h2>
+                <button 
+                    onClick={handleOpenCreateModal}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
+                    Crear Nueva Tienda
+                </button>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {stores.map(store => (
-                    <StoreCard key={store.id} store={store} />
+                    <StoreCard 
+                        key={store.id} 
+                        store={store} 
+                        onEdit={() => handleOpenEditModal(store)}
+                        onDelete={() => handleDeleteStore(store.id)}
+                    />
                 ))}
             </div>
         </main>
+        
+        {isModalOpen && (
+            <StoreFormModal 
+                isOpen={isModalOpen} 
+                onClose={handleCloseModal}
+                onSave={fetchStores}
+                storeToEdit={editingStore}
+            />
+        )}
     </div>
   );
 };

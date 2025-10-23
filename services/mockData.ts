@@ -1,7 +1,7 @@
 import type { Store, Product, Order, User } from '../types';
 import { TemplateName } from '../types';
 
-export const MOCK_USERS: User[] = [
+export let MOCK_USERS: User[] = [
   { id: 'user-root', name: 'Super Admin', role: 'ROOT', email: 'root@labs51.pe', password: 'root123' },
   { id: 'user-admin-1', name: 'Ana García', role: 'ADMIN', storeId: 'store-1', email: 'ana.garcia@labs51.pe', password: 'ana123' },
   { id: 'user-admin-2', name: 'Juan Pérez', role: 'ADMIN', storeId: 'store-2', email: 'juan.perez@labs51.pe', password: 'juan123' },
@@ -10,7 +10,7 @@ export const MOCK_USERS: User[] = [
 ];
 
 
-export const MOCK_STORES: Store[] = [
+export let MOCK_STORES: Store[] = [
   {
     id: 'store-1',
     name: 'Aura Ropa',
