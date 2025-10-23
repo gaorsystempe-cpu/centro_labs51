@@ -55,6 +55,21 @@ const AdminHeader: React.FC = () => {
     );
 }
 
+const RLS_FIX_SQL = `-- 1. Elimina las políticas antiguas e incorrectas (si existen)
+DROP POLICY IF EXISTS "Admins can manage their own store data" ON public.stores;
+DROP POLICY IF EXISTS "Admins can manage their own products" ON public.products;
+
+-- 2. Crea las políticas corregidas
+-- El error 'column "user_id" does not exist' ocurre porque la columna en la tabla 'users' se llama 'id'.
+CREATE POLICY "Admins can manage their own store data"
+ON public.stores FOR ALL
+USING (auth.uid() IN (SELECT id FROM public.users WHERE store_id = stores.id AND role = 'ADMIN'));
+
+CREATE POLICY "Admins can manage their own products"
+ON public.products FOR ALL
+USING (auth.uid() IN (SELECT id FROM public.users WHERE store_id = products.store_id AND role = 'ADMIN'));
+`;
+
 const AdminLayoutContent: React.FC = () => {
     const { loading, store, error } = useStore();
     const { storeId } = useParams<{ storeId: string }>();
@@ -64,12 +79,30 @@ const AdminLayoutContent: React.FC = () => {
     }
 
     if (error) {
+        const isRlsError = error.includes('column "user_id" does not exist');
         return (
             <div className="flex-1 flex items-center justify-center p-8">
-                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-lg text-center" role="alert">
-                    <strong className="font-bold">¡Error de Conexión!</strong>
-                    <span className="block sm:inline ml-2">{error}</span>
-                    <p className="mt-2 text-sm">Por favor, ejecute el script SQL completo en su editor de Supabase para crear todas las tablas necesarias.</p>
+                <div className={`border rounded relative max-w-2xl text-left ${isRlsError ? 'bg-red-100 border-red-400 text-red-700 p-6' : 'bg-red-100 border-red-400 text-red-700 px-4 py-3'}`} role="alert">
+                    <strong className="font-bold">{isRlsError ? "¡Error de Configuración de Base de Datos Detectado!" : "¡Error de Conexión!"}</strong>
+                    
+                    {isRlsError ? (
+                        <>
+                            <p className="mt-2 text-sm">
+                                Parece que hay un error común en las Políticas de Seguridad a Nivel de Fila (RLS) de Supabase.
+                                El error <strong>"{error}"</strong> indica que una política está intentando usar una columna <code>user_id</code> que en realidad se llama <code>id</code> en la tabla <code>users</code>.
+                            </p>
+                            <p className="mt-3 text-sm font-bold">Para solucionarlo, por favor, ejecute el siguiente script SQL en su editor de Supabase:</p>
+                            <pre className="mt-2 bg-gray-800 text-white p-3 rounded-md text-xs overflow-x-auto">
+                                <code>{RLS_FIX_SQL}</code>
+                            </pre>
+                            <p className="mt-3 text-sm">Esto reemplazará las políticas incorrectas por las correctas y debería resolver el problema de inmediato.</p>
+                        </>
+                    ) : (
+                        <>
+                            <span className="block sm:inline ml-2">{error}</span>
+                            <p className="mt-2 text-sm">Por favor, ejecute el script SQL completo en su editor de Supabase para crear todas las tablas necesarias.</p>
+                        </>
+                    )}
                 </div>
             </div>
         );

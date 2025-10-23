@@ -1,6 +1,5 @@
-// FIX: Updated the Deno types reference to a specific versioned URL to resolve 'Cannot find name Deno' errors.
-// FIX: Changed to a more direct, versioned URL from esm.sh to ensure the type definition for Deno runtime is found.
-/// <reference types="https://esm.sh/v135/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
+// FIX: The esm.sh URL for Deno types was failing to resolve. Switched to unpkg.com which is more reliable for resolving type definitions and fixes the 'Cannot find name Deno' errors.
+/// <reference types="https://unpkg.com/@supabase/functions-js@2.4.1/src/edge-runtime.d.ts" />
 
 // @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
